@@ -1,13 +1,9 @@
-FROM ubuntu:bionic
-MAINTAINER Odoo S.A. <info@odoo.com>
+FROM ubuntu:focal
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
 # Generate locale C.UTF-8 for postgres and general locale data
 ENV LANG C.UTF-8
-
-# # Use backports to avoid install some libs with pip
-# RUN echo 'deb http://deb.debian.org/debian stretch-backports main' > /etc/apt/sources.list.d/backports.list
 
 # Install some deps, lessc and less-plugin-clean-css, and wkhtmltopdf
 RUN apt-get update \
@@ -17,7 +13,7 @@ RUN apt-get update \
             dirmngr \
             fonts-noto-cjk \
             gnupg \
-            libssl1.0-dev \
+            libssl-dev \
             node-less \
             python3-pip \
             python3-phonenumbers \
@@ -29,42 +25,20 @@ RUN apt-get update \
             python3-vobject \
             python3-watchdog \
             python3-xlrd \
+            python3-num2words \
+            python3-xlwt \
             xz-utils \
-        && curl -o wkhtmltox.tar.xz -SL https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.4/wkhtmltox-0.12.4_linux-generic-amd64.tar.xz \
-        && echo '3f923f425d345940089e44c1466f6408b9619562 wkhtmltox.tar.xz' | sha1sum -c - \
-        && tar xvf wkhtmltox.tar.xz \
-        && cp wkhtmltox/lib/* /usr/local/lib/ \
-        && cp wkhtmltox/bin/* /usr/local/bin/ \
-        && cp -r wkhtmltox/share/man/man1 /usr/local/share/man/ \
-        && rm -rf wkhtmltox.tar.xz wkhtmltox /var/lib/apt/lists/* \
+            npm \
+            wkhtmltopdf
+        # && curl -o wkhtmltox.tar.xz -SL https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.4/wkhtmltox-0.12.4_linux-generic-amd64.tar.xz \
+        # && echo '3f923f425d345940089e44c1466f6408b9619562 wkhtmltox.tar.xz' | sha1sum -c - \
+        # && tar xvf wkhtmltox.tar.xz \
+        # && cp wkhtmltox/lib/* /usr/local/lib/ \
+        # && cp wkhtmltox/bin/* /usr/local/bin/ \
+        # && cp -r wkhtmltox/share/man/man1 /usr/local/share/man/ \
+        # && rm -rf wkhtmltox.tar.xz wkhtmltox /var/lib/apt/lists/* \
 
-# install latest postgresql-client
-RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
-        && GNUPGHOME="$(mktemp -d)" \
-        && export GNUPGHOME \
-        && repokey='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8' \
-        && gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "${repokey}" \
-        && gpg --batch --armor --export "${repokey}" > /etc/apt/trusted.gpg.d/pgdg.gpg.asc \
-        && gpgconf --kill all \
-        && rm -rf "$GNUPGHOME" \
-        && apt-get update  \
-        && apt-get install --no-install-recommends -y postgresql-client \
-        && rm -f /etc/apt/sources.list.d/pgdg.list \
-        && rm -rf /var/lib/apt/lists/*
-
-# Install rtlcss (on Debian stretch)
-RUN echo "deb http://deb.nodesource.com/node_8.x stretch main" > /etc/apt/sources.list.d/nodesource.list \
-    && GNUPGHOME="$(mktemp -d)" \
-    && export GNUPGHOME \
-    && repokey='9FD3B784BC1C6FC31A8A0A1C1655A0AB68576280' \
-    && gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "${repokey}" \
-    && gpg --batch --armor --export "${repokey}" > /etc/apt/trusted.gpg.d/nodejs.gpg.asc \
-    && gpgconf --kill all \
-    && rm -rf "$GNUPGHOME" \
-    && apt-get update \
-    && apt-get install --no-install-recommends -y nodejs \
-    && npm install -g rtlcss \
-    && rm -rf /var/lib/apt/lists/*
+RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION 12.0
@@ -77,7 +51,6 @@ RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/od
         && rm -rf /var/lib/apt/lists/* odoo.deb
 
 # Copy entrypoint script and Odoo configuration file
-RUN pip3 install num2words xlwt
 COPY ./entrypoint.sh /
 COPY ./odoo.conf /etc/odoo/
 
