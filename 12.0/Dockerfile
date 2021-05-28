@@ -29,9 +29,8 @@ RUN apt-get update \
             python3-xlwt \
             xz-utils \
             npm \
-            wkhtmltopdf
-
-RUN npm install -g rtlcss
+            wkhtmltopdf \
+            && npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION 12.0
